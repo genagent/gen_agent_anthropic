@@ -5,7 +5,7 @@ defmodule GenAgent.Backends.Anthropic do
   Unlike the CLI-backed backends (`GenAgent.Backends.Claude`,
   `GenAgent.Backends.Codex`), this backend talks directly to an HTTP
   API. The **conversation history lives in the session struct**,
-  because the API is stateless — every request carries the full
+  because the API is stateless -- every request carries the full
   messages array.
 
   This backend exists primarily as a **validation spike** for the
@@ -33,11 +33,11 @@ defmodule GenAgent.Backends.Anthropic do
 
   ## Options
 
-    * `:api_key` — Anthropic API key. Defaults to `System.get_env("ANTHROPIC_API_KEY")`.
-    * `:model` — model name. Defaults to `"claude-sonnet-4-5"`.
-    * `:max_tokens` — max tokens per turn. Defaults to `1024`.
-    * `:system` — system prompt (string).
-    * `:http_fn` — a 1-arity function `(request_map) -> {:ok, response_map} | {:error, term}`
+    * `:api_key` -- Anthropic API key. Defaults to `System.get_env("ANTHROPIC_API_KEY")`.
+    * `:model` -- model name. Defaults to `"claude-sonnet-4-5"`.
+    * `:max_tokens` -- max tokens per turn. Defaults to `1024`.
+    * `:system` -- system prompt (string).
+    * `:http_fn` -- a 1-arity function `(request_map) -> {:ok, response_map} | {:error, term}`
       that replaces the default `Req`-backed HTTP call. Intended for tests.
   """
 
