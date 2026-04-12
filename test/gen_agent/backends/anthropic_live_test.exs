@@ -38,8 +38,8 @@ defmodule GenAgent.Backends.AnthropicLiveTest do
 
   defp require_api_key do
     case System.get_env("ANTHROPIC_API_KEY") do
-      nil -> flunk("ANTHROPIC_API_KEY not set — skipping live Anthropic tests")
-      "" -> flunk("ANTHROPIC_API_KEY is empty — skipping live Anthropic tests")
+      nil -> flunk("ANTHROPIC_API_KEY not set -- skipping live Anthropic tests")
+      "" -> flunk("ANTHROPIC_API_KEY is empty -- skipping live Anthropic tests")
       _key -> :ok
     end
   end
@@ -127,7 +127,7 @@ defmodule GenAgent.Backends.AnthropicLiveTest do
       # the same Anthropic backend session across turns.
       assert r1.session_id == r2.session_id
 
-      # The second response should contain "42" — proving the full
+      # The second response should contain "42" -- proving the full
       # conversation history was sent to the API, not just the latest
       # user message.
       assert r2.text =~ "42"
