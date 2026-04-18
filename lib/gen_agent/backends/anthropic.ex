@@ -37,6 +37,13 @@ defmodule GenAgent.Backends.Anthropic do
     * `:model` -- model name. Defaults to `"claude-sonnet-4-5"`.
     * `:max_tokens` -- max tokens per turn. Defaults to `1024`.
     * `:system` -- system prompt (string).
+    * `:receive_timeout` -- HTTP receive timeout in milliseconds.
+      Defaults to `60_000`. Long-context turns (big messages array,
+      slow models) can blow through Req's 15s default, so the backend
+      picks a safer default. Set higher for large debates or longer
+      generations.
+    * `:connect_timeout` -- HTTP connect timeout in milliseconds.
+      Defaults to Req's default when unset.
     * `:http_fn` -- a 1-arity function `(request_map) -> {:ok, response_map} | {:error, term}`
       that replaces the default `Req`-backed HTTP call. Intended for tests.
   """
@@ -49,12 +56,15 @@ defmodule GenAgent.Backends.Anthropic do
   @anthropic_version "2023-06-01"
   @default_model "claude-sonnet-4-5"
   @default_max_tokens 1024
+  @default_receive_timeout 60_000
 
   defstruct [
     :api_key,
     :model,
     :max_tokens,
     :system,
+    :receive_timeout,
+    :connect_timeout,
     :http_fn,
     :client_session_id,
     messages: []
@@ -67,6 +77,8 @@ defmodule GenAgent.Backends.Anthropic do
           model: String.t(),
           max_tokens: pos_integer(),
           system: String.t() | nil,
+          receive_timeout: timeout(),
+          connect_timeout: timeout() | nil,
           http_fn: (map() -> {:ok, map()} | {:error, term()}),
           client_session_id: String.t(),
           messages: [message()]
@@ -82,6 +94,8 @@ defmodule GenAgent.Backends.Anthropic do
       model: Keyword.get(opts, :model, @default_model),
       max_tokens: Keyword.get(opts, :max_tokens, @default_max_tokens),
       system: Keyword.get(opts, :system),
+      receive_timeout: Keyword.get(opts, :receive_timeout, @default_receive_timeout),
+      connect_timeout: Keyword.get(opts, :connect_timeout),
       http_fn: http_fn,
       client_session_id: generate_session_id()
     }
@@ -142,7 +156,9 @@ defmodule GenAgent.Backends.Anthropic do
         {"anthropic-version", @anthropic_version},
         {"content-type", "application/json"}
       ],
-      body: body
+      body: body,
+      receive_timeout: session.receive_timeout,
+      connect_timeout: session.connect_timeout
     }
   end
 
@@ -196,13 +212,24 @@ defmodule GenAgent.Backends.Anthropic do
 
   defp extract_usage(_), do: nil
 
-  defp default_http(%{url: url, headers: headers, body: body}) do
-    case Req.post(url, headers: headers, json: body, retry: false) do
+  defp default_http(%{url: url, headers: headers, body: body} = request) do
+    req_opts =
+      [headers: headers, json: body, retry: false]
+      |> maybe_put_opt(:receive_timeout, request[:receive_timeout])
+      |> maybe_put_opt(:connect_options, connect_options(request[:connect_timeout]))
+
+    case Req.post(url, req_opts) do
       {:ok, %Req.Response{status: 200, body: body}} -> {:ok, body}
       {:ok, %Req.Response{status: status, body: body}} -> {:error, {:http_error, status, body}}
       {:error, reason} -> {:error, reason}
     end
   end
+
+  defp maybe_put_opt(opts, _key, nil), do: opts
+  defp maybe_put_opt(opts, key, value), do: Keyword.put(opts, key, value)
+
+  defp connect_options(nil), do: nil
+  defp connect_options(timeout), do: [timeout: timeout]
 
   defp generate_session_id do
     "anthropic-" <>

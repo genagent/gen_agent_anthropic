@@ -73,6 +73,23 @@ defmodule GenAgent.Backends.AnthropicTest do
       assert session.model == "claude-opus-4-6"
       assert session.max_tokens == 4096
     end
+
+    test "receive_timeout defaults to 60_000" do
+      {:ok, session} = Anthropic.start_session(http_fn: ok_response("hi"))
+      assert session.receive_timeout == 60_000
+    end
+
+    test "accepts explicit :receive_timeout and :connect_timeout" do
+      {:ok, session} =
+        Anthropic.start_session(
+          http_fn: ok_response("hi"),
+          receive_timeout: 180_000,
+          connect_timeout: 5_000
+        )
+
+      assert session.receive_timeout == 180_000
+      assert session.connect_timeout == 5_000
+    end
   end
 
   describe "prompt/2" do
@@ -140,6 +157,40 @@ defmodule GenAgent.Backends.AnthropicTest do
       assert headers["x-api-key"] == "sk-test-xyz"
       assert headers["anthropic-version"] == "2023-06-01"
       assert headers["content-type"] == "application/json"
+    end
+
+    test "request includes receive_timeout and connect_timeout for http_fn" do
+      ref = make_ref()
+
+      {:ok, session} =
+        Anthropic.start_session(
+          api_key: "sk-test",
+          receive_timeout: 120_000,
+          connect_timeout: 5_000,
+          http_fn: recording_fn(ref, ok_response("x"))
+        )
+
+      {:ok, _events, _session} = Anthropic.prompt(session, "hi")
+
+      assert_receive {^ref, request}
+      assert request.receive_timeout == 120_000
+      assert request.connect_timeout == 5_000
+    end
+
+    test "request uses default receive_timeout when not overridden" do
+      ref = make_ref()
+
+      {:ok, session} =
+        Anthropic.start_session(
+          api_key: "sk-test",
+          http_fn: recording_fn(ref, ok_response("x"))
+        )
+
+      {:ok, _events, _session} = Anthropic.prompt(session, "hi")
+
+      assert_receive {^ref, request}
+      assert request.receive_timeout == 60_000
+      assert request.connect_timeout == nil
     end
 
     test "includes system prompt in the body when set" do
