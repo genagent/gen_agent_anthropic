@@ -1,5 +1,11 @@
 # GenAgentAnthropic
 
+> **Source moved:** Active development now lives in
+> [`genagent/gen_agent/integrations/anthropic`](https://github.com/genagent/gen_agent/tree/main/integrations/anthropic).
+> This repository retains its historical issues, pull requests, and tags.
+> The Hex package and public modules keep their names. Please file new issues
+> and pull requests in [`genagent/gen_agent`](https://github.com/genagent/gen_agent).
+
 [![CI](https://github.com/genagent/gen_agent_anthropic/actions/workflows/ci.yml/badge.svg)](https://github.com/genagent/gen_agent_anthropic/actions/workflows/ci.yml)
 [![Hex.pm](https://img.shields.io/hexpm/v/gen_agent_anthropic.svg)](https://hex.pm/packages/gen_agent_anthropic)
 [![Docs](https://img.shields.io/badge/hex-docs-blue.svg)](https://hexdocs.pm/gen_agent_anthropic)
